@@ -1,0 +1,104 @@
+{% extends "backoffice/backoffice_base.html" %}
+{% load static %}
+
+{% block dashboard_app %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <h2 class="h4">Fatture in Entrata</h2>
+        <button class="btn bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#createInvoiceForm" aria-expanded="false" aria-controls="createInvoiceForm">
+            Aggiungi Fattura in Entrata
+        </button>
+    </div>
+
+    <!-- Form per creare una nuova fattura in entrata -->
+    <div class="mb-4">
+        <div class="collapse mt-3" id="createInvoiceForm">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ create_form.as_p }}
+                        <button type="submit" name="create_invoice" class="btn bg-dark text-white">Crea Fattura</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Campo di ricerca -->
+    <div class="m-3">
+        <input type="text" id="searchInput" class="form-control" placeholder="Cerca fattura...">
+    </div>
+
+    <!-- Tabella delle fatture in entrata -->
+    <div class="mt-4">
+        <h3 class="h5">Lista Fatture in Entrata</h3>
+        <table id="invoiceTable" class="table table-bordered w-100">
+            <thead class="table-dark">
+                <tr>
+                    <th>Fornitore</th>
+                    <th>Data</th>
+                    <th>Totale</th>
+                    <th>Azioni</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invoice in invoices %}
+                    <tr>
+                        <td>{{ invoice.supplier }}</td>
+                        <td>{{ invoice.date }}</td>
+                        <td>{{ invoice.total }}</td>
+                        <td>
+                            <!-- Pulsante per mostrare il form di modifica -->
+                            <button class="btn bg-dark text-white btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#updateModal-{{ invoice.id }}" aria-expanded="false" aria-controls="updateModal-{{ invoice.id }}">
+                                Modifica
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- Modal per aggiornare la fattura -->
+                    <div class="modal fade" id="updateModal-{{ invoice.id }}" tabindex="-1" aria-labelledby="updateModalLabel-{{ invoice.id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="updateModalLabel-{{ invoice.id }}">Modifica Fattura</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        {{ invoice.form.as_p }}
+                                        <button type="submit" name="update_invoice" class="btn bg-dark text-white">Salva Modifiche</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                {% empty %}
+                    <tr>
+                        <td colspan="4">Nessuna fattura disponibile.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Script di ricerca -->
+<script>
+    $(document).ready(function () {
+        $('#searchInput').on('keyup', function () {
+            var query = $(this).val().toLowerCase();
+            $('#invoiceTable tbody tr').each(function () {
+                var invoiceText = $(this).find('td').not(':last').text().toLowerCase();
+                if (invoiceText.includes(query)) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+    });
+</script>
+{% endblock dashboard_app %}

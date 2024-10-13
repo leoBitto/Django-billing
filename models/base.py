@@ -1,7 +1,7 @@
 from django.db import models
 from crm.models import Supplier, Customer
 from decimal import Decimal
-from warehouse.models import Product
+from warehouse.models.base import Product
 
 class Invoice(models.Model):
     invoice_number = models.CharField(max_length=50)  # Formato YYYY-XXX
