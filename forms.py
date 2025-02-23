@@ -1,86 +1,137 @@
 from django import forms
-from .models import Invoice, InvoiceLineItem
-from django.forms.models import inlineformset_factory
+from .models import Discount, Invoice, InvoiceLine
 
-class InvoiceEntryForm(forms.ModelForm):
+
+class DiscountForm(forms.ModelForm):
+    """Form per gestire gli sconti applicabili alle righe fattura"""
+    class Meta:
+        model = Discount
+        fields = ['percentage', 'description']
+        widgets = {
+            'percentage': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'max': '100',
+                'placeholder': 'Percentuale di sconto'
+            }),
+            'description': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Descrizione dello sconto'
+            }),
+        }
+
+
+class InvoiceForm(forms.ModelForm):
+    """Form per la gestione delle fatture"""
     class Meta:
         model = Invoice
-        fields = ['invoice_number', 'issue_date', 'supplier', 'total_amount', 'vat', 'payment_due', 'notes']  # Correzione su "payment_due"
-        labels = {
-            'invoice_number': 'Numero Fattura',
-            'issue_date': 'Data di Emissione',
-            'supplier': 'Fornitore',
-            'total_amount': 'Importo Totale',
-            'vat': 'IVA',
-            'payment_due': 'Data di Scadenza',
-            'notes': 'Note',
-        }
+        fields = [
+            'invoice_number', 'invoice_type', 'issue_date', 
+            'currency', 'issuer', 'receiver', 
+            'taxable_amount', 'vat_amount', 'total_amount', 
+            'notes'
+        ]
         widgets = {
-            'supplier': forms.Select(attrs={'disabled': 'true'}),  # Fornitore precompilato
+            'invoice_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Numero Fattura'
+            }),
+            'invoice_type': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'issue_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'currency': forms.TextInput(attrs={
+                'class': 'form-control',
+                'value': 'EUR'
+            }),
+            'issuer': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'receiver': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'taxable_amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0'
+            }),
+            'vat_amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0'
+            }),
+            'total_amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Note aggiuntive'
+            }),
         }
 
-InvoiceEntryInlineFormSet = inlineformset_factory(
-    Invoice, InvoiceLineItem, form=InvoiceEntryForm,
-    fields=['product', 'description', 'quantity', 'unit_price', 'discount_percentage', 'line_total'],  # Aggiunta di 'discount_percentage'
-    extra=1,
-    can_delete=True,
-    labels={
-        'product': 'Prodotto',
-        'description': 'Descrizione',
-        'quantity': 'Quantità',
-        'unit_price': 'Prezzo Unitario',
-        'discount_percentage': 'Sconto (%)',  # Nuovo campo
-        'line_total': 'Totale Linea',
-    }
-)
 
-
-class InvoiceExitForm(forms.ModelForm):
+class InvoiceLineForm(forms.ModelForm):
+    """Form per la gestione delle singole righe della fattura"""
     class Meta:
-        model = Invoice
-        fields = ['invoice_number', 'issue_date', 'customer', 'total_amount', 'vat', 'payment_due', 'notes']
-        labels = {
-            'invoice_number': 'Numero Fattura',
-            'issue_date': 'Data di Emissione',
-            'customer': 'Cliente',
-            'total_amount': 'Importo Totale',
-            'vat': 'IVA',
-            'payment_due': 'Data di Scadenza',
-            'notes': 'Note',
-        }
+        model = InvoiceLine
+        fields = [
+            'invoice', 'line_number', 'product', 'external_product_code',
+            'description', 'quantity', 'unit_of_measure', 'unit_price',
+            'vat_rate', 'line_total', 'discount'
+        ]
         widgets = {
-            'customer': forms.Select(attrs={'disabled': 'true'}),  # Cliente precompilato
+            'invoice': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'line_number': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1'
+            }),
+            'product': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'external_product_code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Codice prodotto fornitore'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Descrizione del prodotto'
+            }),
+            'quantity': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0'
+            }),
+            'unit_of_measure': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Es. pezzi, kg, metri'
+            }),
+            'unit_price': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0'
+            }),
+            'vat_rate': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'max': '100'
+            }),
+            'line_total': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0'
+            }),
+            'discount': forms.Select(attrs={
+                'class': 'form-select'
+            }),
         }
-
-InvoiceExitInlineFormSet = inlineformset_factory(
-    Invoice, InvoiceLineItem, form=InvoiceExitForm,
-    fields=['product', 'description', 'quantity', 'unit_price', 'discount_percentage', 'line_total'],  # Aggiunta di 'discount_percentage'
-    extra=1,
-    can_delete=True,
-    labels={
-        'product': 'Prodotto',
-        'description': 'Descrizione',
-        'quantity': 'Quantità',
-        'unit_price': 'Prezzo Unitario',
-        'discount_percentage': 'Sconto (%)',  # Nuovo campo
-        'line_total': 'Totale Linea',
-    }
-)
-
-
-class PaymentForm(forms.ModelForm):
-    class Meta:
-        model = Payment
-        fields = ['invoice', 'payment_date', 'amount', 'method', 'iban', 'notes']  # Aggiunta di 'iban'
-        labels = {
-            'invoice': 'Fattura',
-            'payment_date': 'Data di Pagamento',
-            'amount': 'Importo Pagato',
-            'method': 'Metodo di Pagamento',
-            'iban': 'IBAN',  # Nuovo campo
-            'notes': 'Note',
-        }
-
-
-class InvoiceUploadForm(forms.Form):
-    file = forms.FileField(label="Carica Fattura (PDF)")

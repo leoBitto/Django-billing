@@ -116,7 +116,7 @@ class InvoiceLine(models.Model):
     # Quantità e prezzi
     quantity = models.DecimalField(_("quantità"), max_digits=10, decimal_places=2)
     unit_of_measure = models.CharField(_("unità di misura"), max_length=10)
-    unit_price = models.DecimalField(_("prezzo unitario"), max_digits=10, decimal_places=2)
+    unit_price = models.DecimalField(_("prezzo unitario"), max_digits=10, decimal_places=8)
     vat_rate = models.DecimalField(_("aliquota IVA"), max_digits=5, decimal_places=2)
     line_total = models.DecimalField(_("totale riga"), max_digits=10, decimal_places=2)
     

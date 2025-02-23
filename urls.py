@@ -1,16 +1,7 @@
 from django.urls import path
-from .views import (  # Assicurati di importare correttamente le views
-    InvoiceSupplierListView,
-    InvoiceSupplierDetailView,
-    InvoiceCustomerListView,
-    InvoiceCustomerDetailView,
-    PaymentListView,
-    PaymentDetailView,
-    InvoiceSupplierAutoAddView,
-    InvoiceCustomerAutoAddView,
-)
+from .views import *
 
-app_name = 'business_finance'
+app_name = 'billing'
 
 urlpatterns = [
     path('invoice-supplier/', InvoiceSupplierListView.as_view(), name='invoice_supplier_list'),
