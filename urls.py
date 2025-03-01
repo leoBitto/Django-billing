@@ -1,17 +1,15 @@
 from django.urls import path
-from .views import *
+from . import views
 
 app_name = 'billing'
 
 urlpatterns = [
-    path('invoice-supplier/', InvoiceSupplierListView.as_view(), name='invoice_supplier_list'),
-    path('invoice-ensuppliertry/<int:invoice_id>/', InvoiceSupplierDetailView.as_view(), name='invoice_supplier_detail'),
-    path('invoice-esupplierntry-auto-add/', InvoiceSupplierAutoAddView.as_view(), name='invoice_supplier_auto_add'),
-
-    path('invoice-customer/', InvoiceCustomerListView.as_view(), name='invoice_customer_list'),
-    path('invoice-customer/<int:invoice_id>/', InvoiceCustomerDetailView.as_view(), name='invoice_customer_detail'),
-    path('invoice-customer-auto-add/', InvoiceCustomerAutoAddView.as_view(), name='invoice_customer_auto_add'),
-
-    path('payment/', PaymentListView.as_view(), name='payments_list'),
-    path('payment/<int:payment_id>/', PaymentDetailView.as_view(), name='payment_detail'),
+    # Supplier Invoice URLs
+    path('supplier-invoices/', views.SupplierInvoiceListView.as_view(), name='supplier_invoices'),
+    path('supplier-invoices/<int:invoice_id>/', views.SupplierInvoiceDetailView.as_view(), name='supplier_invoice_detail'),
+    
+    # Customer Invoice URLs
+    path('customer-invoices/', views.CustomerInvoiceListView.as_view(), name='customer_invoices'),
+    path('customer-invoices/<int:invoice_id>/', views.CustomerInvoiceDetailView.as_view(), name='customer_invoice_detail'),
+    
 ]

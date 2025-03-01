@@ -1,8 +1,8 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
-from billing.models.base import Invoice, Payment
+from billing.models.base import Invoice
 from crm.models.base import Company
-from billing.forms import InvoiceForm, PaymentForm
+from billing.forms import InvoiceForm
 from datetime import datetime, timedelta
 
 class SupplierInvoiceListView(View):
@@ -103,26 +103,3 @@ class CustomerInvoiceDetailView(View):
 
         return render(request, self.template_name, {'invoice': invoice, 'form': form})
 
-class PaymentListView(View):
-    template_name = 'billing/payments.html'
-
-    def get(self, request, *args, **kwargs):
-        twelve_months_ago = datetime.now() - timedelta(days=365)
-        payments = Payment.objects.filter(payment_date__gte=twelve_months_ago)
-        form = PaymentForm()
-        return render(request, self.template_name, {'payments': payments, 'form': form})
-
-    def post(self, request, *args, **kwargs):
-        if 'delete_object' in request.POST:
-            payment = get_object_or_404(Payment, id=request.POST.get('delete_object'))
-            payment.delete()
-            return redirect('billing:payments_list')
-
-        form = PaymentForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('billing:payments_list')
-
-        twelve_months_ago = datetime.now() - timedelta(days=365)
-        payments = Payment.objects.filter(payment_date__gte=twelve_months_ago)
-        return render(request, self.template_name, {'payments': payments, 'form': form})
