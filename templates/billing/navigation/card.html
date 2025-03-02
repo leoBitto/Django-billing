@@ -1,0 +1,28 @@
+    <!-- Billing -->
+    <div class="col-12 col-md-4 mb-3">
+        <div class="card p-3">
+            <div class="card-body text-center pt-3 shadow-sm">
+                <div class="d-flex justify-content-center align-items-center gap-2 mb-3">
+                    <i class="fas fa-file-invoice-dollar fa-2x"></i>
+                    <h5 class="card-title mb-0">Fatturazione</h5>
+                </div>
+                <div class="accordion" id="billingAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingBilling">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBilling" aria-expanded="false" aria-controls="collapseBilling">
+                                Gestisci Fatture
+                            </button>
+                        </h2>
+                        <div id="collapseBilling" class="accordion-collapse collapse" aria-labelledby="headingBilling" data-bs-parent="#billingAccordion">
+                            <div class="accordion-body">
+                                <ul class="list-unstyled">
+                                    <li><a href="{% url 'billing:supplier_invoices' %}" class="btn btn-outline-dark my-1 w-100 text-start"><i class="fas fa-truck me-2"></i> Fatture Fornitori</a></li>
+                                    <li><a href="{% url 'billing:customer_invoices' %}" class="btn btn-outline-dark my-1 w-100 text-start"><i class="fas fa-shopping-cart me-2"></i> Fatture Clienti</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Discount, Invoice, InvoiceLine
+from .models.base import Discount, Invoice, InvoiceLine
 
 
 class DiscountForm(forms.ModelForm):
