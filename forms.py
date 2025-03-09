@@ -135,3 +135,18 @@ class InvoiceLineForm(forms.ModelForm):
                 'class': 'form-select'
             }),
         }
+
+
+
+class InvoiceUploadForm(forms.Form):
+    xml_file = forms.FileField(label='Carica il file XML della fattura')
+
+    def clean_xml_file(self):
+        xml_file = self.cleaned_data.get('xml_file')
+        if xml_file:
+            # Controlla l'estensione del file
+            if not xml_file.name.endswith('.xml'):
+                raise forms.ValidationError("Il file caricato non è un file XML valido.")
+            return xml_file
+        else:
+            raise forms.ValidationError("Nessun file XML caricato.")

@@ -45,6 +45,10 @@ class Invoice(models.Model):
         ('OUT', _('Fattura di Vendita')),
     ]
 
+    # File originale
+    file_xml = models.FileField(upload_to='fatture_xml/',  blank=True, null=True, verbose_name=_("file XML"))
+    
+
     # Dati principali della fattura
     invoice_number = models.CharField(_("numero fattura"), max_length=50, db_index=True)
     invoice_type = models.CharField(_("tipo fattura"), max_length=3, choices=INVOICE_TYPES)

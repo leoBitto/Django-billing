@@ -1,5 +1,6 @@
 from django.urls import path
 from billing.views.base import *
+from billing.views.parser import *
 
 app_name = 'billing'
 
@@ -12,4 +13,6 @@ urlpatterns = [
     path('customer-invoices/', CustomerInvoiceListView.as_view(), name='customer_invoices'),
     path('customer-invoices/<int:invoice_id>/', CustomerInvoiceDetailView.as_view(), name='customer_invoice_detail'),
     
+    # Invoice Upload URLs
+    path('invoice-upload/', InvoiceUploadView.as_view(), name='invoice_upload'),
 ]

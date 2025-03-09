@@ -6,7 +6,7 @@ from billing.forms import InvoiceForm
 from datetime import datetime, timedelta
 
 class SupplierInvoiceListView(View):
-    template_name = 'billing/supplier_invoices.html'
+    template_name = 'billing/supplier_invoice_list.html'
 
     def get(self, request, *args, **kwargs):
         own_company = Company.objects.get(is_own_company=True)
@@ -55,7 +55,7 @@ class SupplierInvoiceDetailView(View):
         return render(request, self.template_name, {'invoice': invoice, 'form': form})
 
 class CustomerInvoiceListView(View):
-    template_name = 'billing/customer_invoices.html'
+    template_name = 'billing/customer_invoice_list.html'
 
     def get(self, request, *args, **kwargs):
         own_company = Company.objects.get(is_own_company=True)

@@ -1,0 +1,101 @@
+{% extends "backoffice/backoffice.html" %}
+{% load static %}
+
+{% block main %}
+<div class="container mt-4">
+    <!-- Intestazione -->
+    <div class="d-flex flex-row flex-md-row justify-content-between align-items-center mb-4">
+        <h2 class="h4 text-center text-md-start">
+            <i class="fas fa-file-invoice me-2"></i>Fatture Fornitori
+        </h2>
+        <div class="d-flex flex-row justify-content-between align-items-center mb-4">
+            <button class="btn bg-dark text-white mt-2 mt-md-0 me-2" data-bs-toggle="modal" data-bs-target="#createInvoiceModal">
+                <i class="fas fa-plus-circle me-2"></i>
+            </button>
+            <a href="{% url 'backoffice:backoffice' %}" class="btn btn-outline-dark mt-2 mt-md-0">
+                <i class="fa-solid fa-reply me-2"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Modal per aggiungere una nuova fattura -->
+    <div class="modal fade" id="createInvoiceModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="fas fa-file-invoice me-2"></i>Nuova Fattura Fornitore</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit" class="btn bg-dark text-white w-100">
+                            <i class="fas fa-check me-2"></i>Crea Fattura
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabella delle fatture -->
+    <div class="table-responsive">
+        <table id="invoiceTable" class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Numero</th>
+                    <th>Data</th>
+                    <th class="d-none d-md-table-cell">Fornitore</th>
+                    <th>Totale</th>
+                    <th>Azioni</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invoice in invoices %}
+                    <tr>
+                        <td>{{ invoice.invoice_number }}</td>
+                        <td>{{ invoice.issue_date }}</td>
+                        <td class="d-none d-md-table-cell">{{ invoice.issuer }}</td>
+                        <td>{{ invoice.total_amount }} {{ invoice.currency }}</td>
+                        <td>
+                            <a href="{% url 'billing:supplier_invoice_detail' invoice.id %}" class="btn btn-outline-dark btn-sm">
+                                <i class="fas fa-info-circle"></i>
+                            </a>
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="delete_object" value="{{ invoice.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Sei sicuro di voler eliminare questa fattura?');">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">Nessuna fattura trovata.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('#invoiceTable').DataTable({
+            language: {
+                url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Italian.json"
+            },
+            responsive: true,
+            columnDefs: [
+                { responsivePriority: 1, targets: 0 },
+                { responsivePriority: 2, targets: 3 },
+                { responsivePriority: 3, targets: 4 }
+            ]
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}
