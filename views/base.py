@@ -4,6 +4,7 @@ from billing.models.base import Invoice
 from crm.models.base import Company
 from billing.forms import InvoiceForm
 from datetime import datetime, timedelta
+from django.contrib import messages
 
 class SupplierInvoiceListView(View):
     template_name = 'billing/supplier_invoice_list.html'
