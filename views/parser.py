@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.views import View
 from billing.forms import InvoiceUploadForm
 from billing.models.base import Invoice, InvoiceLine, Discount
-from warehouse.models.base import Product
+from warehouse.models.base import *
 from crm.models.base import Company as CRMCompany
 from decimal import Decimal
 from xml.etree import ElementTree as ET
@@ -146,14 +146,32 @@ class InvoiceUploadView(View):
         )
         return company
 
-    def get_or_create_product(self, product_data):
-        product, created = Product.objects.get_or_create(
-            name=product_data['name'],
-            defaults={
-                'description': product_data['description'],
-                'external_code': product_data['external_code'],
-            }
-        )
+    def get_or_create_product(product_data, supplier):
+        # Prima cerchiamo il prodotto tramite nome esatto
+        product = Product.objects.filter(name=product_data['name']).first()
+        
+        # Se non trovato, cerchiamo negli alias
+        if not product:
+            alias = ProductAlias.objects.filter(alias_name=product_data['name'], supplier=supplier).first()
+            if alias:
+                product = alias.product
+        
+        # Se ancora non trovato, creiamo un nuovo prodotto
+        if not product:
+            product = Product.objects.create(
+                name=product_data['name'],
+                description=product_data.get('description', ''),
+                external_code=product_data.get('external_code', '')
+            )
+            # Creiamo anche un alias associato al fornitore
+            ProductAlias.objects.create(
+                product=product,
+                supplier=supplier,
+                alias_name=product_data['name'],
+                external_code=product_data.get('external_code', ''),
+                description=product_data.get('description', '')
+            )
+        
         return product
 
     def get_or_create_discount(self, discount_data):
