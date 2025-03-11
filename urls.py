@@ -15,4 +15,5 @@ urlpatterns = [
     
     # Invoice Upload URLs
     path('invoice-upload/', InvoiceUploadView.as_view(), name='invoice_upload'),
+    path('invoice-upload-ajax/', InvoiceUploadAjaxView.as_view(), name='invoice_upload_ajax'),
 ]

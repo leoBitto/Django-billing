@@ -1,5 +1,7 @@
 from django import forms
 from .models.base import Discount, Invoice, InvoiceLine
+from django.core.exceptions import ValidationError
+import os
 
 
 class DiscountForm(forms.ModelForm):
@@ -137,16 +139,26 @@ class InvoiceLineForm(forms.ModelForm):
         }
 
 
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
 
 class InvoiceUploadForm(forms.Form):
-    xml_file = forms.FileField(label='Carica il file XML della fattura')
-
-    def clean_xml_file(self):
-        xml_file = self.cleaned_data.get('xml_file')
-        if xml_file:
-            # Controlla l'estensione del file
-            if not xml_file.name.endswith('.xml'):
-                raise forms.ValidationError("Il file caricato non è un file XML valido.")
-            return xml_file
+    xml_files = forms.FileField(
+        widget=MultipleFileInput(),
+        label='File XML Fatture',
+        help_text='Seleziona uno o più file XML da caricare'
+    )
+    
+    def clean_xml_files(self):
+        xml_files = self.files.getlist('xml_files')
+        if xml_files:
+            valid_files = []
+            for xml_file in xml_files:
+                # Controlla l'estensione del file
+                if not xml_file.name.endswith('.xml'):
+                    raise forms.ValidationError("Il file caricato non è un file XML valido.")
+                valid_files.append(xml_file)
+            return valid_files
         else:
             raise forms.ValidationError("Nessun file XML caricato.")
+

@@ -1,12 +1,12 @@
+<!-- billing/templates/billing/invoice_upload.html -->
 {% extends "backoffice/backoffice.html" %}
 {% load static %}
 
 {% block main %}
-<div class="container mt-4">
-    <!-- Intestazione -->
-    <div class="d-flex flex-row flex-md-row justify-content-between align-items-center mb-4">
+<div class="container">
+    <div class="d-flex flex-row flex-md-row justify-content-between align-items-center m-3">
         <h2 class="h4 text-center text-md-start">
-            <i class="fas fa-file-upload me-2"></i>Carica Fattura XML
+            <i class="fas fa-file-upload me-2"></i>Carica Fatture XML
         </h2>
         <div class="d-flex flex-row justify-content-between align-items-center mb-4">
             <a href="{% url 'backoffice:backoffice' %}" class="btn btn-outline-dark mt-2 mt-md-0">
@@ -14,25 +14,158 @@
             </a>
         </div>
     </div>
-
-    <!-- Messaggio di errore -->
-    {% if error %}
-        <div class="alert alert-danger" role="alert">
-            {{ error }}
+    
+    <form method="post" enctype="multipart/form-data" id="uploadForm">
+        {% csrf_token %}
+        <div class="d-flex flex-row justify-content-around">
+            {{ form.as_p }}
+            <button type="button" class="btn btn-outline-dark btn-sm mb-3" id="uploadBtn">Carica Fatture</button>
         </div>
-    {% endif %}
-
-    <!-- Form per caricare il file XML -->
-    <div class="card">
-        <div class="card-body">
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                {{ form.as_p }}
-                <button type="submit" class="btn bg-dark text-white w-100">
-                    <i class="fas fa-upload me-2"></i>Carica Fattura
-                </button>
-            </form>
+    </form>
+    
+    <!-- Area di feedback con barra di avanzamento nascosta inizialmente -->
+    <div id="progressContainer" style="display: none; margin-top: 20px;">
+        <h4>Elaborazione delle fatture in corso...</h4>
+        <div class="progress">
+            <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%;" 
+                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+        </div>
+    </div>
+    
+    <!-- Dettaglio file -->
+    <div id="fileStatusContainer" class="mt-4" style="display: none;">
+        <h4>Dettaglio elaborazione</h4>
+        <div id="fileStatus" class="list-group"></div>
+    </div>
+    
+    <!-- Riepilogo finale -->
+    <div id="summaryContainer" class="mt-4" style="display: none;">
+        <h4>Riepilogo Caricamento</h4>
+        <div class="alert alert-info">
+            <p><strong>Totale file elaborati:</strong> <span id="totalFiles">0</span></p>
+            <p><strong>Fatture caricate con successo:</strong> <span id="successCount">0</span></p>
+            <p><strong>Fatture duplicate:</strong> <span id="duplicateCount">0</span></p>
+            <p><strong>Errori:</strong> <span id="errorCount">0</span></p>
         </div>
     </div>
 </div>
+
+{% block javascript %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadForm = document.getElementById('uploadForm');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const fileStatus = document.getElementById('fileStatus');
+    const fileStatusContainer = document.getElementById('fileStatusContainer');
+    const summaryContainer = document.getElementById('summaryContainer');
+    
+    // Contatori per il riepilogo
+    let successCount = 0;
+    let duplicateCount = 0;
+    let errorCount = 0;
+    
+    uploadBtn.addEventListener('click', async function() {
+        const fileInput = uploadForm.querySelector('input[type="file"]');
+        const files = fileInput.files;
+        
+        if (files.length === 0) {
+            alert('Seleziona almeno un file XML da caricare.');
+            return;
+        }
+        
+        // Reset contatori
+        successCount = 0;
+        duplicateCount = 0;
+        errorCount = 0;
+        
+        // Aggiorna UI
+        fileStatus.innerHTML = '';
+        fileStatusContainer.style.display = 'block';
+        progressContainer.style.display = 'block';
+        summaryContainer.style.display = 'none';
+        uploadBtn.disabled = true;
+        
+        // Crea elementi per ogni file
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const fileElement = document.createElement('div');
+            fileElement.id = `file-${i}`;
+            fileElement.className = 'list-group-item';
+            fileElement.innerHTML = `
+                <h6 class="mb-1">${file.name}</h6>
+                <p class="mb-1">In attesa di elaborazione...</p>
+            `;
+            fileStatus.appendChild(fileElement);
+        }
+        
+        // Processa i file uno alla volta
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const fileElement = document.getElementById(`file-${i}`);
+            
+            // Aggiorna UI per mostrare file in elaborazione
+            fileElement.querySelector('p').textContent = 'Elaborazione in corso...';
+            fileElement.className = 'list-group-item list-group-item-info';
+            
+            // Aggiorna barra di progresso
+            const progress = Math.round(((i) / files.length) * 100);
+            progressBar.style.width = `${progress}%`;
+            progressBar.textContent = `${progress}%`;
+            progressBar.setAttribute('aria-valuenow', progress);
+            
+            // Crea FormData e aggiungi il file
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                // Invia richiesta AJAX
+                const response = await fetch('{% url "billing:invoice_upload_ajax" %}', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                // Aggiorna UI in base al risultato
+                if (result.status === 'success') {
+                    fileElement.className = 'list-group-item list-group-item-success';
+                    successCount++;
+                } else if (result.status === 'duplicate') {
+                    fileElement.className = 'list-group-item list-group-item-warning';
+                    duplicateCount++;
+                } else {
+                    fileElement.className = 'list-group-item list-group-item-danger';
+                    errorCount++;
+                }
+                
+                fileElement.querySelector('p').textContent = result.message;
+                
+            } catch (error) {
+                // Gestione errori
+                fileElement.className = 'list-group-item list-group-item-danger';
+                fileElement.querySelector('p').textContent = `Errore di comunicazione: ${error.message}`;
+                errorCount++;
+            }
+            
+            // Aggiorna la barra di progresso
+            const newProgress = Math.round(((i + 1) / files.length) * 100);
+            progressBar.style.width = `${newProgress}%`;
+            progressBar.textContent = `${newProgress}%`;
+            progressBar.setAttribute('aria-valuenow', newProgress);
+        }
+        
+        // Al termine, mostra il riepilogo
+        document.getElementById('totalFiles').textContent = files.length;
+        document.getElementById('successCount').textContent = successCount;
+        document.getElementById('duplicateCount').textContent = duplicateCount;
+        document.getElementById('errorCount').textContent = errorCount;
+        
+        summaryContainer.style.display = 'block';
+        uploadBtn.disabled = false;
+    });
+});
+</script>
+{% endblock %}
 {% endblock %}
