@@ -32,8 +32,9 @@ class InvoiceForm(forms.ModelForm):
             'invoice_number', 'invoice_type', 'issue_date', 
             'currency', 'issuer', 'receiver', 
             'taxable_amount', 'vat_amount', 'total_amount', 
-            'notes'
+            'payment_status', 'notes'
         ]
+
         widgets = {
             'invoice_number': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -70,6 +71,9 @@ class InvoiceForm(forms.ModelForm):
                 'class': 'form-control',
                 'step': '0.01',
                 'min': '0'
+            }),
+            'payment_status': forms.Select(attrs={
+                'class': 'form-select'
             }),
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',

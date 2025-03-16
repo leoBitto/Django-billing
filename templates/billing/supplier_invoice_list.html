@@ -1,6 +1,20 @@
 {% extends "backoffice/backoffice.html" %}
 {% load static %}
 
+{% block head_extra %}
+<!-- DataTables Buttons e dipendenze per esportazione -->
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css">
+<script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
+<!-- DateRangePicker per filtro date -->
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+{% endblock %}
+
 {% block main %}
 <div class="container mt-4">
     <!-- Intestazione -->
@@ -15,6 +29,36 @@
             <a href="{% url 'backoffice:backoffice' %}" class="btn btn-outline-dark mt-2 mt-md-0">
                 <i class="fa-solid fa-reply me-2"></i>
             </a>
+        </div>
+    </div>
+    
+    <!-- Filtri -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtri</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="daterange" class="form-label">Intervallo Date:</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                        <input type="text" id="daterange" class="form-control" placeholder="Seleziona intervallo...">
+                        <button id="resetDateFilter" class="btn btn-outline-secondary" type="button">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label for="paymentStatusFilter" class="form-label">Stato Pagamento:</label>
+                    <select id="paymentStatusFilter" class="form-select">
+                        <option value="">Tutti</option>
+                        <option value="PAID">Pagata</option>
+                        <option value="UNPAID">Non Pagata</option>
+                        <option value="PARTIAL">Pagamento Parziale</option>
+                    </select>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -44,20 +88,30 @@
         <table id="invoiceTable" class="table table-striped table-hover">
             <thead class="table-dark">
                 <tr>
-                    <th>Numero</th>
-                    <th>Data</th>
-                    <th class="d-none d-md-table-cell">Fornitore</th>
+                    <th class="d-none d-md-table-cell">Numero</th>
+                    <th class="d-none d-md-table-cell">Data</th>
+                    <th>Fornitore</th>
                     <th>Totale</th>
+                    <th>Stato Pagamento</th>
                     <th>Azioni</th>
                 </tr>
             </thead>
             <tbody>
                 {% for invoice in invoices %}
                     <tr>
-                        <td>{{ invoice.invoice_number }}</td>
-                        <td>{{ invoice.issue_date }}</td>
-                        <td class="d-none d-md-table-cell">{{ invoice.issuer }}</td>
+                        <td class="d-none d-md-table-cell">{{ invoice.invoice_number }}</td>
+                        <td class="d-none d-md-table-cell">{{ invoice.issue_date }}</td>
+                        <td>{{ invoice.issuer }}</td>
                         <td>{{ invoice.total_amount }} {{ invoice.currency }}</td>
+                        <td>
+                            {% if invoice.payment_status == 'PAID' %}
+                                <span class="badge bg-success"><i class="fas fa-check-circle"></i> Pagata</span>
+                            {% elif invoice.payment_status == 'UNPAID' %}
+                                <span class="badge bg-danger"><i class="fas fa-times-circle"></i> Da Pagare</span>
+                            {% elif invoice.payment_status == 'PARTIAL' %}
+                                <span class="badge bg-warning text-dark"><i class="fas fa-percentage"></i> Pagamento Parziale</span>
+                            {% endif %}
+                        </td>
                         <td>
                             <a href="{% url 'billing:supplier_invoice_detail' invoice.id %}" class="btn btn-outline-dark btn-sm">
                                 <i class="fas fa-info-circle"></i>
@@ -73,7 +127,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="5" class="text-center">Nessuna fattura trovata.</td>
+                        <td colspan="6" class="text-center">Nessuna fattura trovata.</td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -81,21 +135,172 @@
     </div>
 </div>
 
-{% block extra_js %}
 <script>
     $(document).ready(function() {
-        $('#invoiceTable').DataTable({
+        // Inizializza il date range picker
+        $('#daterange').daterangepicker({
+            locale: {
+                format: 'DD/MM/YYYY',
+                applyLabel: 'Applica',
+                cancelLabel: 'Annulla',
+                fromLabel: 'Da',
+                toLabel: 'A',
+                customRangeLabel: 'Periodo Personalizzato',
+                monthNames: ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'],
+                daysOfWeek: ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab']
+            },
+            autoUpdateInput: false,
+            ranges: {
+               'Oggi': [moment(), moment()],
+               'Ieri': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+               'Ultimi 7 Giorni': [moment().subtract(6, 'days'), moment()],
+               'Ultimi 30 Giorni': [moment().subtract(29, 'days'), moment()],
+               'Questo Mese': [moment().startOf('month'), moment().endOf('month')],
+               'Mese Scorso': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            }
+        });
+
+        // Quando l'utente applica un intervallo di date
+        $('#daterange').on('apply.daterangepicker', function(ev, picker) {
+            $(this).val(picker.startDate.format('DD/MM/YYYY') + ' - ' + picker.endDate.format('DD/MM/YYYY'));
+            table.draw(); // Ridisegna la tabella con il filtro applicato
+        });
+
+        // Quando l'utente cancella un intervallo di date
+        $('#daterange').on('cancel.daterangepicker', function(ev, picker) {
+            $(this).val('');
+            table.draw(); // Ridisegna la tabella senza filtro date
+        });
+
+        // Reset filtro date
+        $('#resetDateFilter').click(function() {
+            $('#daterange').val('');
+            table.draw();
+        });
+
+        // Funzione per ottenere la data formattata per il nome del file
+        function getFormattedDate() {
+            var date = new Date();
+            var day = String(date.getDate()).padStart(2, '0');
+            var month = String(date.getMonth() + 1).padStart(2, '0');
+            var year = date.getFullYear();
+            
+            return day + '_' + month + '_' + year;
+        }
+        
+        // Nome del file per l'esportazione
+        var exportFileName = 'fatture_fornitori_' + getFormattedDate();
+        
+        // Funzione per convertire data da formato italiano a formato per confronto
+        $.fn.dataTable.ext.search.push(
+            function(settings, data, dataIndex) {
+                var dateRange = $('#daterange').val();
+                if (!dateRange) {
+                    return true; // Se non c'è filtro date, mostra tutte le righe
+                }
+
+                var dates = dateRange.split(' - ');
+                var startDate = moment(dates[0], 'DD/MM/YYYY');
+                var endDate = moment(dates[1], 'DD/MM/YYYY');
+                
+                // La data nella tabella è nella colonna 1 (indice 1)
+                var dateStr = data[1];
+                // Prova a riconoscere il formato della data
+                var rowDate = moment(dateStr, ['DD/MM/YYYY', 'YYYY-MM-DD', 'DD-MM-YYYY']);
+                
+                return rowDate.isValid() && rowDate.isBetween(startDate, endDate, null, '[]');
+            }
+        );
+
+        // Filtro per stato pagamento
+        $.fn.dataTable.ext.search.push(
+            function(settings, data, dataIndex) {
+                var selectedStatus = $('#paymentStatusFilter').val();
+                if (!selectedStatus) {
+                    return true; // Se non c'è filtro, mostra tutte le righe
+                }
+                
+                // Ottiene il testo del badge di stato pagamento - colonna 4 (indice 4)
+                var badgeHtml = data[4];
+                
+                // Controlla se contiene il testo corrispondente allo stato selezionato
+                if (selectedStatus === 'PAID' && badgeHtml.includes('Pagata')) {
+                    return true;
+                } else if (selectedStatus === 'UNPAID' && badgeHtml.includes('Da Pagare')) {
+                    return true;
+                } else if (selectedStatus === 'PARTIAL' && badgeHtml.includes('Pagamento Parziale')) {
+                    return true;
+                }
+                
+                return false;
+            }
+        );
+        
+        // Inizializza DataTables
+        var table = $('#invoiceTable').DataTable({
             language: {
                 url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Italian.json"
             },
             responsive: true,
+            dom: 'Bfrtip',
+            buttons: [
+                {
+                    extend: 'excel',
+                    text: '<i class="fas fa-file-excel"></i> Excel',
+                    className: 'btn btn-sm btn-outline-dark',
+                    filename: exportFileName,
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4] // Esclude la colonna Azioni (indice 5)
+                    }
+                },
+                {
+                    extend: 'pdf',
+                    text: '<i class="fas fa-file-pdf"></i> PDF',
+                    className: 'btn btn-sm btn-outline-dark',
+                    filename: exportFileName,
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4] // Esclude la colonna Azioni (indice 5)
+                    },
+                    customize: function(doc) {
+                        // Personalizzazione del PDF
+                        doc.defaultStyle.fontSize = 10;
+                        doc.styles.tableHeader.fontSize = 11;
+                        doc.styles.tableHeader.alignment = 'left';
+                        doc.content[1].table.widths = ['*', '*', '*', '*', '*']; // Larghezze colonne automatiche
+                        
+                        // Aggiunge intestazione con data
+                        doc.content.splice(0, 0, {
+                            text: 'Estratto il ' + new Date().toLocaleDateString('it-IT'),
+                            style: 'subheader',
+                            margin: [0, 0, 0, 10]
+                        });
+                        
+                        // Aggiunge titolo
+                        doc.content.splice(0, 0, {
+                            text: 'Elenco Fatture Fornitori',
+                            style: 'header',
+                            alignment: 'center',
+                            margin: [0, 0, 0, 10]
+                        });
+                    }
+                }
+            ],
+            // Ricerca abilitata
+            searching: true,
+            // Configurazione per colonne
             columnDefs: [
-                { responsivePriority: 1, targets: 0 },
-                { responsivePriority: 2, targets: 3 },
-                { responsivePriority: 3, targets: 4 }
+                { orderable: false, targets: 5 }, // Disabilita ordinamento per colonna Azioni
+                { responsivePriority: 1, targets: 0 }, // Numero fattura
+                { responsivePriority: 2, targets: 3 }, // Totale
+                { responsivePriority: 2, targets: 4 }, // Stato pagamento
+                { responsivePriority: 3, targets: 1 }  // Data
             ]
+        });
+        
+        // Evento change per filtro stato pagamento
+        $('#paymentStatusFilter').change(function() {
+            table.draw();
         });
     });
 </script>
-{% endblock %}
 {% endblock %}

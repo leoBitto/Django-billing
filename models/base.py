@@ -45,6 +45,12 @@ class Invoice(models.Model):
         ('OUT', _('Fattura di Vendita')),
     ]
 
+    PAYMENT_STATUS = [
+        ('UNPAID', _('Non Pagata')),
+        ('PAID', _('Pagata')),
+        ('PARTIAL', _('Pagamento Parziale')),
+    ]
+
     # File originale
     file_xml = models.FileField(upload_to='fatture_xml/',  blank=True, null=True, verbose_name=_("file XML"))
     
@@ -73,6 +79,9 @@ class Invoice(models.Model):
     taxable_amount = models.DecimalField(_("imponibile"), max_digits=10, decimal_places=2)
     vat_amount = models.DecimalField(_("importo IVA"), max_digits=10, decimal_places=2)
     total_amount = models.DecimalField(_("totale documento"), max_digits=10, decimal_places=2)
+
+    # Stato pagamento
+    payment_status = models.CharField(_("stato pagamento"), max_length=10, choices=PAYMENT_STATUS, default='UNPAID')
     
     # Metadati
     notes = models.TextField(_("note"), blank=True)

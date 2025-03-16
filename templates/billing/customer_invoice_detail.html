@@ -16,9 +16,17 @@
     <!-- Dettaglio Fattura -->
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-dark text-white">
-            <h5 class="card-title mb-0">
-                <i class="fas fa-file-invoice me-2"></i>Fattura N° {{ invoice.invoice_number }}
-            </h5>
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-file-invoice me-2"></i>Fattura N° {{ invoice.invoice_number }}
+                </h5>
+                <span class="badge rounded-pill 
+                    {% if invoice.payment_status == 'PAID' %}bg-success
+                    {% elif invoice.payment_status == 'PARTIAL' %}bg-warning text-dark
+                    {% else %}bg-danger{% endif %}">
+                    {{ invoice.get_payment_status_display }}
+                </span>
+            </div>
         </div>
         <div class="card-body">
             <form method="post">
@@ -31,7 +39,7 @@
                             </div>
                             <div class="card-body">
                                 {% for field in form %}
-                                    {% if field.name != 'notes' and field.name != 'issuer' and field.name != 'receiver' %}
+                                    {% if field.name != 'notes' and field.name != 'issuer' and field.name != 'receiver' and field.name != 'payment_status' %}
                                         <div class="mb-3">
                                             {{ field.label_tag }}
                                             {{ field }}
@@ -56,10 +64,37 @@
                                     {{ form.receiver }}
                                 </div>
                                 <div class="mb-3">
+                                    <!-- Campo nascosto per il payment_status -->
+                                    <input type="hidden" name="payment_status" id="id_payment_status" value="{{ invoice.payment_status }}">
+                                    <div class="mb-3">
+                                        <label class="form-label">Stato Pagamento</label>
+                                        <div class="btn-group w-100" role="group" aria-label="Stato pagamento">
+                                            <button type="button" class="btn btn-outline-danger btn-sm payment-status-btn" data-status="UNPAID">
+                                                <i class="fas fa-times-circle me-1"></i>Non Pagata
+                                            </button>
+                                            <button type="button" class="btn btn-outline-warning btn-sm payment-status-btn" data-status="PARTIAL">
+                                                <i class="fas fa-exclamation-circle me-1"></i>Parziale
+                                            </button>
+                                            <button type="button" class="btn btn-outline-success btn-sm payment-status-btn" data-status="PAID">
+                                                <i class="fas fa-check-circle me-1"></i>Pagata
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
                                     {{ form.notes.label_tag }}
                                     {{ form.notes }}
                                 </div>
                             </div>
+                        </div>
+                        <!-- Pulsanti -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="submit" name="update_invoice" class="btn bg-dark text-white">
+                                <i class="fas fa-save me-2"></i>Salva Modifiche
+                            </button>
+                            <button type="submit" name="delete_invoice" class="btn btn-outline-danger" onclick="return confirm('Sei sicuro di voler eliminare questa fattura?');">
+                                <i class="fas fa-trash-alt me-2"></i>Elimina
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -120,18 +155,59 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Pulsanti -->
-                <div class="d-flex justify-content-between mt-4">
-                    <button type="submit" name="update_invoice" class="btn bg-dark text-white">
-                        <i class="fas fa-save me-2"></i>Salva Modifiche
-                    </button>
-                    <button type="submit" name="delete_invoice" class="btn btn-outline-danger" onclick="return confirm('Sei sicuro di voler eliminare questa fattura?');">
-                        <i class="fas fa-trash-alt me-2"></i>Elimina
-                    </button>
-                </div>
             </form>
         </div>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    // Imposta lo stato attuale come attivo
+    const currentStatus = document.getElementById('id_payment_status').value;
+    const buttons = document.querySelectorAll('.payment-status-btn');
+    
+    buttons.forEach(button => {
+        if (button.dataset.status === currentStatus) {
+            button.classList.remove('btn-outline-danger', 'btn-outline-warning', 'btn-outline-success');
+            
+            if (currentStatus === 'UNPAID') {
+                button.classList.add('btn-danger');
+            } else if (currentStatus === 'PARTIAL') {
+                button.classList.add('btn-warning');
+            } else if (currentStatus === 'PAID') {
+                button.classList.add('btn-success');
+            }
+        }
+        
+        // Aggiungi event listener per il click
+        button.addEventListener('click', function() {
+            const status = this.dataset.status;
+            document.getElementById('id_payment_status').value = status;
+            
+            // Rimuovi classi attive da tutti i pulsanti
+            buttons.forEach(btn => {
+                btn.classList.remove('btn-danger', 'btn-warning', 'btn-success');
+                
+                if (btn.dataset.status === 'UNPAID') {
+                    btn.classList.add('btn-outline-danger');
+                } else if (btn.dataset.status === 'PARTIAL') {
+                    btn.classList.add('btn-outline-warning');
+                } else if (btn.dataset.status === 'PAID') {
+                    btn.classList.add('btn-outline-success');
+                }
+            });
+            
+            // Imposta lo stile del pulsante cliccato
+            this.classList.remove('btn-outline-danger', 'btn-outline-warning', 'btn-outline-success');
+            
+            if (status === 'UNPAID') {
+                this.classList.add('btn-danger');
+            } else if (status === 'PARTIAL') {
+                this.classList.add('btn-warning');
+            } else if (status === 'PAID') {
+                this.classList.add('btn-success');
+            }
+            });
+        });
+    });
+</script>
 {% endblock %}
